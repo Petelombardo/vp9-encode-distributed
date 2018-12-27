@@ -166,14 +166,15 @@ encode() {
 
 
 
-DURATION=$(/usr/bin/ffmpeg -i "$FILE" 2>&1 | grep Duration  | cut -d':' -f2- | cut -d',' -f1 | cut -d' ' -f2)
-echo Duration: $DURATION
-TO_SECS
-TOTALSECONDS=$SECONDS
-TOTALSECONDS=$(($SECONDS + $MINUTES*60 + $HOURS*3600))
-echo "Total seconds: $TOTALSECONDS"
+
 
 if [ "$2" == "" ]; then
+	DURATION=$(/usr/bin/ffmpeg -i "$FILE" 2>&1 | grep Duration  | cut -d':' -f2- | cut -d',' -f1 | cut -d' ' -f2)
+	echo Duration: $DURATION
+	TO_SECS
+	TOTALSECONDS=$SECONDS
+	TOTALSECONDS=$(($SECONDS + $MINUTES*60 + $HOURS*3600))
+	echo "Total seconds: $TOTALSECONDS"
 	encode
 elif [ "$2" == "status" ]; then
 	get_status
