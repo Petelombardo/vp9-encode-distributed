@@ -1,0 +1,188 @@
+#/bin/bash
+
+SERVERS=""; # List your servers here, separated by spaces
+
+if [ "$SERVERS" == "" ]; then
+    echo "You need to add your list of servers to the server variable.  Separate by spaces."
+    exit
+fi
+
+FILENAME=$(basename "$1")
+FILE="$1"
+FOLDER=$(echo "$1" | sed -e 's/'"$FILENAME"'//')
+LASTSECONDS=0
+if [ -f $FOLDER/ffmpeg.benchmark ]; then
+	BENCHMARK=$(cat "$FOLDER/ffmpeg.benchmark")
+fi
+
+SERVERCOUNT=$(echo $SERVERS | wc -w)
+
+
+if [ "$2" == "" ]; then
+	echo "Processing file $1; Folder: $FOLDER; File: $FILENAME"
+	echo "" > "$FOLDER/$FILENAME.txt"
+	echo "" > "$FOLDER/$FILENAME.join"
+
+	INTERLACED=$(ssh root@renegade1.local /usr/bin/ffmpeg -i "$FILE" 2>&1 | grep 1920x1080 | wc -l)
+	if [ $INTERLACED -eq 1 ]; then
+	        OPTIONS="-vf yadif"
+	fi
+fi
+
+TO_SECS() {
+	HOURS=$(echo $DURATION | cut -d':' -f1 | sed -e 's/^0*//')
+	if [ "$HOURS" == "" ]; then
+		HOURS="0"
+	fi
+	MINUTES=$(echo $DURATION | cut -d':' -f2 | sed -e 's/^0*//')
+	if [ "$MINUTES" == "" ]; then
+		MINUTES="0"
+	fi
+	SECONDS=$(echo $DURATION | cut -d':' -f3 | cut -d'.' -f1 | sed -e 's/^0*//')
+	if [ "$SECONDS" == "" ]; then
+		SECONDS="0"
+	fi
+}
+
+get_benchmark() {
+	echo "" > "$FOLDER/ffmpeg.benchmark"
+	for ITEM in $SERVERS
+	do
+		SERVER=$(echo "$ITEM" | cut -d':' -f1)
+		echo "$SERVER:0" >> "$FOLDER/ffmpeg.benchmark"
+		FPS=$(ssh $SERVER "/usr/bin/ffmpeg -y -i '$FILE' -c:v libvpx-vp9 -c:a libopus -ac 6 -t 2 -vf yadif -f null -benchmark /dev/null 2>&1 | sed -e 's/\r//g' | sed -e 's/.*fps//' | grep '^=' | cut -d'=' -f2 | cut -d' ' -f1 | sed -e 's/\.//' | sed -e 's/^0*//'") && sed -i "$FOLDER/ffmpeg.benchmark" -e "s/"$SERVER":0/"$SERVER":"$FPS"/" &
+		RUNNING=1
+		TIMER=0
+	done	
+	while [ $RUNNING -gt 0 ] || [ $TIMER -gt 300 ]
+	do
+			echo -n "."
+			RUNNING=$(cat "$FOLDER/ffmpeg.benchmark" | grep ":0" | wc -l)
+			TIMER=$((TIMER+1))
+			sleep 1
+	done
+	echo ""
+	cat "$FOLDER/ffmpeg.benchmark"
+}
+
+
+FROM_SECS() {
+	OLDSECONDS=$SECONDS
+	FRACTION=1
+	HOURS=0
+	MINUTES=0
+	HOURS=$(($SECONDS/3600))
+	SECONDS=$(($SECONDS-$HOURS*3600))
+	MINUTES=$(($SECONDS/60))
+	SECONDS=$((SECONDS-$MINUTES*60))
+	if [ $HOURS -lt 1 ]; then
+		HOURS="00"
+	elif [ $HOURS -lt 10 ]; then
+		HOURS="0$HOURS"
+	fi
+	if [ $MINUTES -lt 1 ]; then
+		MINUTES="00"
+	elif [ $MINUTES -lt 10 ]; then
+		MINUTES="0$MINUTES"
+	fi
+	TIME="$HOURS:$MINUTES:$SECONDS"
+	SECONDS=$OLDSECONDS
+	LASTSECONDS=$SECONDS
+}	
+
+START_ENCODING() {
+	echo "$SERVER: $START - $ENDSECS (SEC)"
+	PASS1="/usr/bin/nice -n 19 /usr/bin/ffmpeg -y -ss $START -t $ENDSECS -i \"$FILE\" -c:v libvpx-vp9 -b:v 2400K -pass 1 -passlogfile /tmp/$SERVER -an -f matroska -threads 4 -speed 4 -tile-columns 2 -frame-parallel 1 -deadline good -r 30 $OPTIONS /dev/null < /dev/null > /tmp/ffmpeg1.log 2>&1"
+	PASS2="/usr/bin/nice -n 19 /usr/bin/ffmpeg -y -ss $START -t $ENDSECS -i \"$FILE\" -c:v libvpx-vp9 -b:v 2400K -pass 2 -passlogfile /tmp/$SERVER -ac 6 -c:a libopus -b:a 384k $OPTIONS -threads 4 -speed 3 -tile-columns 2 -frame-parallel 1 -deadline good -auto-alt-ref 1 -lag-in-frames 25 -r 30 $OPTIONS \"$FOLDER/$FILENAME-$SERVER.mkv\" < /dev/null > /tmp/ffmpeg2.log 2>&1"
+	PASS1="$PASS1 && sed -i \"$FOLDER/$FILENAME.txt\" -e \"s/\(\"$SERVER\".*\)0$/\11/\""; # Toggle status bit
+	PASS2="$PASS2 && sed -i \"$FOLDER/$FILENAME.txt\" -e \"s/\(\"$SERVER\".*\)1$/\12/\""; # Toggle status bit
+	echo "$SERVER:$ENDSECS:0" >> "$FOLDER/$FILENAME.txt"
+	echo "file $FOLDER/$FILENAME-$SERVER.mkv" >> "$FOLDER/$FILENAME.join"
+	ssh root@$SERVER "$PASS1 && $PASS2" &
+}
+
+
+join_videos() {
+	echo "What's the joined file path/name?"
+	read OUTNAME
+	/usr/bin/ffmpeg -f concat -safe 0 -i "$FOLDER/$FILENAME.join" -c copy "$OUTNAME"
+}
+
+get_status() {
+	cat "$FILE.txt"
+}
+
+
+encode() {
+        TOTALUNITS=0
+        COUNT=0
+        TOTALCOUNT=0
+        ALLOCATED=0
+        for ITEM in $SERVERS
+        do
+		SERVER=$(echo $ITEM | cut -d':' -f1)
+		if [ $(echo $BENCHMARK | grep $SERVER | wc -l) -eq 1 ]; then
+			UNIT=$(echo "$BENCHMARK" | grep "$SERVER" | cut -d':' -f2)
+		else
+                	UNIT=$(echo $ITEM | cut -d':' -f2)
+		fi
+		if [ "$UNIT" == "" ]; then
+			UNIT=1
+		fi
+                TOTALUNITS=$((UNIT+TOTALUNITS))
+                TOTALCOUNT=$((TOTALCOUNT+1))
+        done
+        for ITEM in $SERVERS
+        do
+                COUNT=$((COUNT+1))
+                SERVER=$(echo $ITEM | cut -d':' -f1)
+                if [ $(echo $BENCHMARK | grep $SERVER | wc -l) -eq 1 ]; then
+                        UNIT=$(echo "$BENCHMARK" | grep "$SERVER" | cut -d':' -f2)
+                else
+                        UNIT=$(echo $ITEM | cut -d':' -f2)
+                fi
+		if [ "$UNIT" == "" ]; then
+			UNIT=1
+		fi
+                if [ $COUNT -eq $TOTALCOUNT ]; then
+                        SLICE=$((TOTALSECONDS-ALLOCATED))
+                else
+                        SLICE=$((UNIT*TOTALSECONDS))
+                        SLICE=$((SLICE/TOTALUNITS))
+                        ALLOCATED=$((ALLOCATED+SLICE))
+                fi
+        	if [ $COUNT -eq 1 ]; then
+                	SECONDS=$SLICE; FROM_SECS; END=$TIME; START="00:00:00.00"; ENDSECS=$SLICE
+                	START_ENCODING
+        	elif [ $COUNT -lt $SERVERCOUNT ]; then
+                	START="$END.01"; SECONDS=$ALLOCATED; FROM_SECS; END=$TIME; ENDSECS=$SLICE
+                	START_ENCODING
+        	else
+                	START="$END.01"; SECONDS=$ALLOCATED; END="$DURATION"; ENDSECS=$SLICE
+                	START_ENCODING
+        	fi
+        done
+}
+
+
+
+DURATION=$(/usr/bin/ffmpeg -i "$FILE" 2>&1 | grep Duration  | cut -d':' -f2- | cut -d',' -f1 | cut -d' ' -f2)
+echo Duration: $DURATION
+TO_SECS
+TOTALSECONDS=$SECONDS
+TOTALSECONDS=$(($SECONDS + $MINUTES*60 + $HOURS*3600))
+echo "Total seconds: $TOTALSECONDS"
+
+if [ "$2" == "" ]; then
+	encode
+elif [ "$2" == "status" ]; then
+	get_status
+elif [ "$2" == "join" ]; then
+	join_videos
+elif [ "$2" == "benchmark" ]; then
+	get_benchmark
+else
+	echo "Usage:"
+	echo "./vp9-encode-distributed <file> [status|join]"
+	echo
+fi
