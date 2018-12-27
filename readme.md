@@ -1,4 +1,6 @@
 This script allows you to use several PCs or VMs or Containers to distribute the load of transcoding a video to VP9/Opus format.<br>
+Input: Varies
+Output: VP9 + Opus
 It is intended to copy 5.1 channel audio and up to 1080i video.  It will automatically deinterlace the video if needed.<br>
 <br>
 INSTRUCTIONS<br>
