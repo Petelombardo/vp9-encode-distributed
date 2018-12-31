@@ -1,6 +1,6 @@
 #/bin/bash
 
-SERVERS="renegade1.local renegade2.local renegade3.local renegade4.local encode1.local encode2.local"
+SERVERS=""
 IBITRATE=2500K; # Interlaced Bitrate
 NIBITRATE=2200K; # Non-Interlaced Bitrate
 AUDIOCHANNELS=6; # Set this to 6 for 5.1 surround
