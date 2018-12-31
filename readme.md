@@ -8,11 +8,12 @@ REQUIREMENTS<br>
 <li>Linux with ffmpeg installed on each system</li>
 <li>libvpx installed</li>
 <br>
-INSTRUCTIONS<br>
-<br>
-Copy vp9-encode-distributed to one of the servers in the cluster.  That will be your control node as well as a worker node.<br>
-Make the script executable by running: chmod a+x vp9-encode-distributed.<br>
-Mount a share in the same mount point on each worker node.  You can use NFS, or if you do not have common storage, just use sshfs to mount.<br>
+INSTRUCTIONS
+<li>Run ssh-keygen on all of the nodes</li>
+<li>Run ssh-copy-id from the master node (the one with this script) to all other nodes</li>
+<li>Copy vp9-encode-distributed to one of the servers in the cluster.  That will be your control node as well as a worker node.</li>
+<li>Make the script executable by running: chmod a+x vp9-encode-distributed.</li>
+<li>Mount a share in the same mount point on each worker node.  You can use NFS, or if you do not have common storage, just use sshfs to mount.</li>
 <br>
 Examples:<br>
 <br>
