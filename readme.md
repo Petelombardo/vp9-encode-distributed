@@ -19,6 +19,7 @@ Examples:<br>
 <br>
 Login to server1<br>
 wget https://raw.githubusercontent.com/Petelombardo/vp9-encode-distributed/master/vp9-encode-distributed<br>
+chmod a+x vp9-encode-distributed<br>
 Edit the script and set the variable SERVERS="server1 server2".<br>
 ssh-keygen<br>
 ssh-copy-id server2<br>
