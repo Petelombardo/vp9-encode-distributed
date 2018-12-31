@@ -3,6 +3,11 @@ Input: Varies<br>
 Output: VP9 + Opus<br>
 It is intended to copy 5.1 channel audio and up to 1080i video.  It will automatically deinterlace the video if needed.<br>
 <br>
+REQUIREMENTS<br>
+<li>Either shared storage (preferred) for the video processing, or a copy of the video in the same location on each system</li>
+<li>Linux with ffmpeg installed on each system</li>
+<li>libvpx installed</li>
+<br>
 INSTRUCTIONS<br>
 <br>
 Copy vp9-encode-distributed to one of the servers in the cluster.  That will be your control node as well as a worker node.<br>
