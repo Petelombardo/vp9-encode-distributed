@@ -18,6 +18,7 @@ Examples:<br>
 <br>
 ./vp9-encode-distributed /mnt/shared/movie.ts benchmark;  #  You only need to run this once so that it knows how to distribute the load<br>
 ./vp9-encode-distributed /mnt/shared/movie.ts; # This kicks off the actual vp9 encoding<br>
-./vp9-encode-distributed /mnt/shared/movie.ts status; # You can run this as many times as you want.  A status of 1 = 1st pass done.  Status of 2 = 2nd pass done (i.e. encoding complete).<br>
+./vp9-encode-distributed /mnt/shared/movie.ts status; # Tells you the current status of all of the systems.<br>
+watch bash ./vp9-encode-distributed /mnt/shared/movie.ts status; # Keeps the status of all of the systems up on your screen perpetually.  ctl-c to stop it.<br>
 ./vp9-encode-distributed /mnt/shared/movie.ts join; # Run this after encoding completes on all nodes.  Give the complete path+filename when prompted.  example:  /mnt/movies/movie.mkv<br>
 
