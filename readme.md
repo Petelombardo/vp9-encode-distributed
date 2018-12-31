@@ -15,8 +15,7 @@ INSTRUCTIONS
 <li>Run ssh-copy-id from the master node (the one with this script) to all other nodes</li>
 <li>Mount a share in the same mount point on each worker node.  You can use NFS, or if you do not have common storage, just use sshfs to mount.</li>
 <br>
-Examples:<br>
-<br>
+Example:<br>
 Login to server1<br>
 wget https://raw.githubusercontent.com/Petelombardo/vp9-encode-distributed/master/vp9-encode-distributed<br>
 chmod a+x vp9-encode-distributed<br>
