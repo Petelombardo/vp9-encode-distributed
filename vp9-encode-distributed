@@ -44,7 +44,7 @@ if [ "$2" == "" ]; then
 		BITRATE=$RATE720
 	elif [ $RESOLUTION -le 1080 ]; then
 		BITRATE=$RATE1080
-	elif [ $RESOLUTION -ge 2160 ]; then
+	elif [ $RESOLUTION -gt 1080 ]; then
 		BITRATE=$RATE2160
 	fi
 	echo "Resolution is $RESOLUTION; Setting bitrate to $BITRATE"
