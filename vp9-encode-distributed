@@ -1,8 +1,9 @@
 #/bin/bash
 
 SERVERS=""; # List your servers here (separated by spaces)
-IBITRATE=2500K; # Interlaced Bitrate
-NIBITRATE=2200K; # Non-Interlaced Bitrate
+RATE2160=3500K; # 4K Bitrate
+RATE1080=2500K; # 1080P Bitrate
+RATE720=2200K; # 720P Bitrate
 AUDIOCHANNELS=6; # Set this to 6 for 5.1 surround
 AUDIOBITRATE=384K;
 
@@ -21,18 +22,32 @@ fi
 
 SERVERCOUNT=$(echo $SERVERS | wc -w)
 
+get_resolution() {
+        RESOLUTION=$(ffmpeg -i "$FOLDER/$FILENAME" 2>&1 | grep "Video" | cut -d',' -f2- | sed -e 's/^.*[ ,][0-9][0-9]*x\([0-9][0-9]*\)[ ,].*$/\1/')
+}
+
 if [ "$2" == "" ]; then
 	echo "Processing file $1; Folder: $FOLDER; File: $FILENAME"
 	echo "" > "$FOLDER/$FILENAME.txt"
 	echo "" > "$FOLDER/$FILENAME.join"
 
+	get_resolution
+	if [ "$RESOLUTION" == "" ]; then
+		echo "Error getting resolution from video."
+		RESOLUTION=1080
+	fi
 	INTERLACED=$(/usr/bin/ffmpeg -i "$FILE" 2>&1 | grep "top first" | wc -l)
 	if [ $INTERLACED -eq 1 ]; then
 	        OPTIONS="-vf yadif"
-		BITRATE=$IBITRATE
-	else
-		BITRATE=$NIBITRATE
 	fi
+	if [ $RESOLUTION -le 720 ]; then
+		BITRATE=$RATE720
+	elif [ $RESOLUTION -le 1080 ]; then
+		BITRATE=$RATE1080
+	elif [ $RESOLUTION -ge 2160 ]; then
+		BITRATE=$RATE2160
+	fi
+	echo "Resolution is $RESOLUTION; Setting bitrate to $BITRATE"
 fi
 
 TO_SECS() {
