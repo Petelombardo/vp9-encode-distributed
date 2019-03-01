@@ -1,6 +1,6 @@
 #/bin/bash
 
-SERVERS=""
+SERVERS=""; # List your servers here (separated by spaces)
 IBITRATE=2500K; # Interlaced Bitrate
 NIBITRATE=2200K; # Non-Interlaced Bitrate
 AUDIOCHANNELS=6; # Set this to 6 for 5.1 surround
@@ -26,7 +26,7 @@ if [ "$2" == "" ]; then
 	echo "" > "$FOLDER/$FILENAME.txt"
 	echo "" > "$FOLDER/$FILENAME.join"
 
-	INTERLACED=$(/usr/bin/ffmpeg -i "$FILE" 2>&1 | grep 1920x1080 | wc -l)
+	INTERLACED=$(/usr/bin/ffmpeg -i "$FILE" 2>&1 | grep "top first" | wc -l)
 	if [ $INTERLACED -eq 1 ]; then
 	        OPTIONS="-vf yadif"
 		BITRATE=$IBITRATE
@@ -238,6 +238,6 @@ elif [ "$2" == "benchmark" ]; then
 	get_benchmark
 else
 	echo "Usage:"
-	echo "./convert-video-distributed <file> [status|join]"
+	echo "./vp9-encode-distributed <file> [status|join]"
 	echo
 fi
