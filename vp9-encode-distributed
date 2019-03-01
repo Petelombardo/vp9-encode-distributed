@@ -238,6 +238,11 @@ elif [ "$2" == "benchmark" ]; then
 	get_benchmark
 else
 	echo "Usage:"
-	echo "./vp9-encode-distributed <file> [status|join]"
+	echo "./vp9-encode-distributed <file> [benchmark|status|join]"
+	echo "Examples:"
+	echo "   vp9-encode-distributed test.ts benchmark; # This memorizes the load distribution for optimal encoding"
+	echo "   vp9-encode-distributed test.ts; # This starts the encoding"
+	echo "   vp9-encode-distributed test.ts status; # This checks on a running encoding job"
+	echo "   vp9-encode-distributed test.ts join; # This stitches the re-encoded fragments back together after encoding completes"
 	echo
 fi
