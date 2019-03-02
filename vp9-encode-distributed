@@ -1,7 +1,7 @@
 #/bin/bash
 
 SERVERS=""; # List your servers here (separated by spaces)
-RATE2160=3500K; # 4K Bitrate
+RATE2160=5000K; # 4K Bitrate
 RATE1080=2500K; # 1080P Bitrate
 RATE720=2200K; # 720P Bitrate
 AUDIOCHANNELS=6; # Set this to 6 for 5.1 surround
